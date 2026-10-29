@@ -17,18 +17,19 @@ class SosCalculator # rubocop:disable Style/Documentation
     corp_points = {}
     runner_points = {}
     stage.eligible_pairings.each do |p|
+      weight = p.round.weight.to_r
       points[p.player1_id] ||= 0
       points[p.player1_id] += p.score1 || 0
       points[p.player2_id] ||= 0
       points[p.player2_id] += p.score2 || 0
       games_played[p.player1_id] ||= 0
-      games_played[p.player1_id] += p.round.weight
+      games_played[p.player1_id] += weight
       games_played[p.player2_id] ||= 0
-      games_played[p.player2_id] += p.round.weight
+      games_played[p.player2_id] += weight
       opponents[p.player1_id] ||= []
-      opponents[p.player1_id] << { id: p.player2_id, weight: p.round.weight }
+      opponents[p.player1_id] << { id: p.player2_id, weight: }
       opponents[p.player2_id] ||= []
-      opponents[p.player2_id] << { id: p.player1_id, weight: p.round.weight }
+      opponents[p.player2_id] << { id: p.player1_id, weight: }
       points_for_sos[p.player1_id] ||= 0
       points_for_sos[p.player1_id] += p.score1 || 0
       points_for_sos[p.player2_id] ||= 0
@@ -56,10 +57,10 @@ class SosCalculator # rubocop:disable Style/Documentation
     opponents.each do |id, o|
       sos[id] = if o.any?
                   o.sum do |player|
-                    player[:weight] * points_for_sos[player[:id]].to_f / games_played[player[:id]]
-                  end.to_f / o.inject(0) { |i, player| i + player[:weight] if player[:id] }
+                    player[:weight] * points_for_sos[player[:id]] / games_played[player[:id]]
+                  end / o.inject(0) { |i, player| i + player[:weight] if player[:id] }
                 else
-                  0.0
+                  0
                 end
     end
 
@@ -68,9 +69,9 @@ class SosCalculator # rubocop:disable Style/Documentation
       extended_sos[id] = if o.any?
                            o.sum do |player|
                              player[:weight] * sos[player[:id]]
-                           end.to_f / o.inject(0) { |i, player| i + player[:weight] if player[:id] }
+                           end / o.inject(0) { |i, player| i + player[:weight] if player[:id] }
                          else
-                           0.0
+                           0
                          end
     end
 

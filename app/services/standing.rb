@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Standing # rubocop:disable Style/Documentation
-  attr_reader :player, :points, :sos, :extended_sos, :bye_points, :corp_points, :runner_points
+  attr_reader :player, :points, :bye_points, :corp_points, :runner_points
 
   delegate :name, :pronouns, :name_with_pronouns, to: :player
   delegate :tournament, :seed_in_stage, to: :player
@@ -21,7 +21,16 @@ class Standing # rubocop:disable Style/Documentation
   end
 
   def tiebreakers
-    [points, -manual_seed, sos, extended_sos]
+    [points, -manual_seed, @sos, @extended_sos]
+  end
+
+  # Keep exact values for ranking, but expose floats for display, exports and caching.
+  def sos
+    @sos.to_f
+  end
+
+  def extended_sos
+    @extended_sos.to_f
   end
 
   def corp_identity

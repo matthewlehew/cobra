@@ -94,6 +94,24 @@ RSpec.describe Standing do
       ).to eq(1)
     end
 
+    it 'preserves sos differences smaller than floating-point precision' do
+      first = described_class.new(player, sos: 1 + Rational(1, 10**18), extended_sos: 0)
+      second = described_class.new(other, sos: 1, extended_sos: 2)
+
+      expect(first.sos).to be_a(Float)
+      expect(first.sos).to eq(second.sos)
+      expect(first <=> second).to eq(-1)
+    end
+
+    it 'preserves extended sos differences smaller than floating-point precision' do
+      first = described_class.new(player, sos: 1, extended_sos: 1 + Rational(1, 10**18))
+      second = described_class.new(other, sos: 1, extended_sos: 1)
+
+      expect(first.extended_sos).to be_a(Float)
+      expect(first.extended_sos).to eq(second.extended_sos)
+      expect(first <=> second).to eq(-1)
+    end
+
     context 'with manual seed tournament' do
       let(:tournament) { create(:tournament, manual_seed: true) }
       let(:other) { create(:player, tournament:, manual_seed: 2) }

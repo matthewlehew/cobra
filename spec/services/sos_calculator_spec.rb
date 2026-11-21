@@ -148,6 +148,55 @@ RSpec.describe SosCalculator do
     end
   end
 
+  context 'equal sos from different opponent scores' do
+    let(:players) { [snap, crackle, pop, other, create(:player, tournament:), create(:player, tournament:)] }
+    let(:weight) { 1.0 }
+
+    before do
+      allow(round).to receive(:weight).and_return(weight)
+      pairings = [
+        [3, 5, 1, 1], [4, 0, 0, 3], [2, 1, 0, 3],
+        [3, 1, 3, 0], [0, 5, 1, 1], [4, 2, 1, 1],
+        [2, 4, 3, 0], [1, 0, 0, 3], [5, 3, 3, 0],
+        [0, 1, 1, 1], [4, 5, 3, 0], [2, 3, 0, 3],
+        [0, 1, 1, 1], [4, 2, 0, 3], [5, 3, 3, 0],
+        [4, 3, 0, 3], [5, 0, 1, 1], [1, 2, 3, 0]
+      ].map do |player1, player2, score1, score2|
+        create(:pairing, player1: players[player1], player2: players[player2], score1:, score2:, round:)
+      end
+      allow(stage).to receive(:eligible_pairings).and_return(pairings)
+    end
+
+    it 'uses extended sos to order the tied players' do
+      first, second = results.first(2)
+
+      aggregate_failures do
+        expect([first.player, second.player]).to eq([snap, other])
+        expect(first.points).to eq(second.points)
+        expect(first.sos).to eq(second.sos)
+        expect(first.sos).to eq(Rational(23, 18).to_f)
+        expect(first.extended_sos).to eq(Rational(40, 27).to_f)
+        expect(second.extended_sos).to eq(Rational(38, 27).to_f)
+      end
+    end
+
+    context 'with decimal round weights' do
+      let(:weight) { BigDecimal('0.1') }
+
+      it 'preserves equality through weighted calculations' do
+        first, second = results.first(2)
+
+        aggregate_failures do
+          expect([first.player, second.player]).to eq([snap, other])
+          expect(first.sos).to eq(second.sos)
+          expect(first.sos).to eq(Rational(115, 9).to_f)
+          expect(first.extended_sos).to eq(Rational(400, 27).to_f)
+          expect(second.extended_sos).to eq(Rational(380, 27).to_f)
+        end
+      end
+    end
+  end
+
   describe 'corp and runner points' do
     before do
       create(:pairing, player1: snap, player2: crackle, score1_corp: 3, score1_runner: 3, round:)
